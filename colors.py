@@ -1,3 +1,4 @@
+#definição de cores em formato RGB
 red = {
 	'r':1,
 	'g':0,

@@ -1,3 +1,4 @@
+#Teclas do teclado com seu código
 up = 265
 down = 264
 right = 262
