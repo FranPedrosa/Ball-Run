@@ -1,9 +1,9 @@
 '''
-Nomes:							Nusp
+Nomes:							Nusi
 Bruno Fernandes Moreira  		11218712
 Francisco de Freitas Pedrosa  	11215699
 Luis Otávio Machado Ferreira	 8988296
-Savio Duarte Fontes    			10737251
+Savio Duarte Fontes				10737251
 Thales Willian Dalvi da Silva   11219196
 
 Trabalho 1 - SCC0250-2022
@@ -33,7 +33,7 @@ import time
 from numpy import random
 
 #Importando os outros arquivos
-import ball
+import cell
 import keys
 import colors
 
@@ -103,26 +103,24 @@ glUseProgram(program)
 #Criação dos objetos
 #Todos os objetos serão colocados no mesmo Buffer, assim, utilizaremos a variável offset para definirmos a posição de cada um no array passado para o Buffer
 
-angle = 0.0				#angulo original para a rotação de cada bola
 colisions = 0			#Número de colisões entre a bola controlável e a bolas não controláveis
-angle_speed = 0.0		#velocidade de rotação das bolas no próprio eixo
 scale = 1.0				#escala que é aplicada em todos os objetos
 all_points = []			#array que armazena todos os pontos de todos os objetos
-balls = []				#array que armazena todos os objetos(bolas) do programa
+cells = []				#array que armazena todos os objetos(bolas) do programa
 
 #Criação da Bola controlável pelo jogador
-b1 = ball.Ball(len(all_points),-0.9,-0.9,1,colors.red,colors.blue)
+b1 = cell.Cell(len(all_points),-0.9,-0.9,1,'bacteria')
 all_points += b1.points
-balls.append(b1)
+cells.append(b1)
 
 #Criação das bolas não controláveis pelo jogador, sua posição inicial é escolhida aleatóriamente
 for i in range(5):
 	x = random.randint(-10,10) / 10
 	y = random.randint(-10,10) / 10
-	t = random.randint(2,10) / 10
-	b = ball.Ball(len(all_points),x,y,t,colors.yellow,colors.black)
+	t = random.randint(4,15) / 10
+	b = cell.Cell(len(all_points),x,y,t,'virus')
 	all_points += b.points
-	balls.append(b)
+	cells.append(b)
 
 #Preparando o espaço para todos os vértices de todas as bolas
 vertices = np.zeros(len(all_points), [("position", np.float32, 2)])
@@ -150,34 +148,24 @@ glVertexAttribPointer(loc, 2, GL_FLOAT, False, stride, offset)
 
 #Função que pega os eventos do teclado e a partir deles, modifica as variáveis relacionadas as transformações
 def key_event(window, key, scancode, action, mods):
-	global angle_speed, scale
-	if action == 1:
+	global scale
 		
-		#As setas do teclado definem a direção da Bola Controlável
-		if key == keys.right:
-			balls[0].dir_x = 0.02
-			balls[0].dir_y = 0.00
-		if key == keys.up:
-			balls[0].dir_x = 0.00
-			balls[0].dir_y = 0.02
-		if key == keys.left:
-			balls[0].dir_x = -0.02
-			balls[0].dir_y = 0.00
-		if key == keys.down:
-			balls[0].dir_x = 0.00
-			balls[0].dir_y = -0.02
+	if action == 1:
 
+		#As setas do teclado definem a direção da Bola Controlável
+		if key == keys.up and cells[0].speed < 0.006:
+			cells[0].speed += 0.002
+		if key == keys.down and cells[0].speed > 0.002:
+			cells[0].speed -= 0.002
+		if key == keys.left:
+			cells[0].angle -= math.pi / 4
+		if key == keys.right:
+			cells[0].angle += math.pi / 4
 		#Teclas W e S definem o aumento ou diminuição da escala dos obejtos
 		if key == keys.w:
 			scale += 0.1
 		if key == keys.s and scale > 0.01:
 			scale -= 0.1
-
-		#Teclas A e D definem a velocidade das Bolas girando no próprio eixo
-		if key == keys.d:
-			angle_speed += 0.1
-		if key == keys.a:
-			angle_speed -= 0.1
 
 #pega os eventos do teclado
 glfw.set_key_callback(window, key_event)
@@ -197,50 +185,52 @@ def draw(offset,colors, transf):
 		glUniform4f(loc_color, c['r'], c['g'], c['b'], 1.0)
 		glDrawArrays(GL_TRIANGLES, offset + 3*index, 3)
 		index += 1
-
-#Transformação que faz a operação de rotação das bolas e de escala
 def get_global_transformation(ang,scale):
 	c = math.cos(math.radians(ang))
 	s = math.sin(math.radians(ang))
-	
+
 	mat_rotation = np.array([c, -s, 0.0, 0.0,
-							 s, c, 0.0, 0.0,
-							 0.0, 0.0, 1.0, 0.0,
-							 0.0, 0.0, 0.0, 1.0], np.float32)
-	
+			                 s, c, 0.0, 0.0,
+			                 0.0, 0.0, 1.0, 0.0,
+			                 0.0, 0.0, 0.0, 1.0], np.float32)
+
 	mat_scale = np.array([scale, 0.0, 0.0, 0.0,
-						  0.0, scale, 0.0, 0.0,
-						  0.0, 0.0, 1.0, 0.0,
-						  0.0, 0.0, 0.0, 1.0], np.float32)
-	
-	mat_transform = ball.multiplica_matriz(mat_rotation, mat_scale)
-	
+			              0.0, scale, 0.0, 0.0,
+			              0.0, 0.0, 1.0, 0.0,
+			              0.0, 0.0, 0.0, 1.0], np.float32)
+
+	mat_transform = cell.multiplica_matriz(mat_rotation, mat_scale)
+
 	return mat_transform
+
+#Transformação que faz a operação de rotação das bolas e de escala
+def get_global_transformation():
+	mat_scale = np.array([scale, 0.0, 0.0, 0.0,
+		  0.0, scale, 0.0, 0.0,
+		  0.0, 0.0, 1.0, 0.0,
+		  0.0, 0.0, 0.0, 1.0], np.float32)
+	return mat_scale
 
 #----------------------------------------------------------------#
 
 #Loop principal enquanto a janela está aberta
-while not glfw.window_should_close(window) and colisions < 20:
+while not glfw.window_should_close(window) and colisions < 100:
 	glfw.poll_events()
 	glClear(GL_COLOR_BUFFER_BIT)
-	glClearColor(1.0, 1.0, 1.0, 1.0)
+	glClearColor(0.0, 1.0, 1.0, 1.0)
 	
-	#atualização do angulo para mostrar a rotação das bolas
-	angle += angle_speed
-	
-	#pega a transformação que é aplicada em todos os objetos
-	gt = get_global_transformation(angle,scale) 
 
 	#Fazendo a transformação para cada bola e desenhando ela
-	for b in balls:
+	for b in cells:
 		b.move(scale)
-		t = b.get_transformation(angle)
-		t = ball.multiplica_matriz(t,gt)
+		gt = get_global_transformation()	
+		t = b.get_transformation()
+		t = cell.multiplica_matriz(t,gt)
 		draw(b.offset,b.colors,t)
 
 	#verifica se está havendo colisão entre a bola controlável e as não controláveis
-	for b in balls[1:]:
-		if b.check_colision(balls[0],scale):
+	for b in cells[1:]:
+		if b.check_colision(cells[0],scale):
 			colisions += 1
 	print(colisions)
 	time.sleep(0.01)
