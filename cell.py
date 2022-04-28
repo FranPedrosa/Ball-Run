@@ -4,7 +4,7 @@ import numpy as np
 
 PI = 3.141592
 
-#Devolve as coordenadas de um ponto em um círuculo, centrado na origem, de raio radius e ângulo theta
+#Devolve as coordenadas de um ponto em um círuculo, centrado em center, de raio radius e ângulo theta
 def circle_cord(theta, radius,center):
 	x = radius*math.cos(theta) + center[0]
 	y = radius*math.sin(theta) + center[1]
@@ -18,7 +18,7 @@ def multiplica_matriz(a, b):
 	c = m_c.reshape(1, 16)
 	return c
 
-#Função que define um círculo centrado em zero, que tem raio radius e número de vértices igual a triangle_count
+#Função que define um círculo centrado em center, que tem raio radius e número de vértices igual a triangle_count
 #Desenhamos vários triângulos adjacentes para criar um círculo
 def circle_points(center,radius, triangle_count):
 	angle = (2*PI)/triangle_count
@@ -40,6 +40,8 @@ def circle_points(center,radius, triangle_count):
 
 	return points
 
+#Definição dos pontos da bactéria
+#Bactéria é formada por dois círculos grandes (corpo dela) e 5 pequenos (representam organelas)
 def bacteria_points():
 	points = circle_points((0,0),0.07,50) 
 	points += circle_points((0,0.07),0.06,50) 
@@ -50,8 +52,9 @@ def bacteria_points():
 	points += circle_points((0.02,0.07),0.01,50) 
 	return points
 
-#Função que define um círculo centrado em zero, que tem raio radius e número de vértices igual a triangle_count
-#Desenhamos vários triângulos adjacentes para criar um círculo
+#Função baseada na que define um círculo centrado em zero, que tem raio radius e número de vértices igual a triangle_count
+#Desenhamos vários triângulos adjacentes para criar o objeto
+#Ao invés de ser um circulo perfeito, alteramos as posições dos vertices para podermos criar um círculo rodeado de triângulos
 def virus_points(radius, triangle_count):
 	angle = (2*PI)/triangle_count
 
@@ -74,10 +77,10 @@ def virus_points(radius, triangle_count):
 
 	return points
 
-#class Cell, classe que cria um objeto em formato de círculo e tem suas funções relacionadas
+#class Cell, classe que cria um objeto cell e tem suas funções relacionadas
 class Cell:
 
-	#criação do objeto círculo.
+	#criação do objeto cell a partir do tipo de cell que se deseja criar.
 	def __init__(self,offset, x, y, tam, cell_type):
 		self.x = x 
 		self.y = y 
@@ -97,7 +100,7 @@ class Cell:
 			self.colors = [ colors.pink for i in range(100)] + [colors.red for i in range(250)]
 		self.offset = offset
 
-	#atualiza a coordenada x,y para na próxima atualização, a bola esteja se movendo
+	#atualiza a coordenada x,y para na próxima atualização, o objeto cell esteja se movendo
 	def move(self,scale):
 		if self.cell_type == 'bacteria':
 			self.move_bacteria(scale)
@@ -120,16 +123,18 @@ class Cell:
 
 		self.x += (0.5/self.tam)*self.dir_x
 		self.y += (0.5/self.tam)*self.dir_y
+		
+		#atualização do tamanho do virus, ele fica crescendo e diminuindo durante o jogo
 		self.tam = self.tam_base* (1 + math.cos(self.tam_temp)/10)
 		self.tam_temp += 0.1
 
-	#atualiza a coordenada x,y para na próxima atualização, a bola esteja se movendo
+	#atualiza a coordenada x,y para na próxima atualização, a 'bacteria' esteja se movendo
 	def move_bacteria(self,scale):
 
 		self.dir_x = self.speed * math.sin(self.angle)
 		self.dir_y = self.speed * math.cos(self.angle)
 
-		#Movimento reflexivos, se o obejto bate na parede da janela, ele não passa por ela e volta invertendo o sentido de movimento
+		#Movimento de parada, se o obejto bate na parede da janela, ele para de se mover no sentido da parede
 		if self.x + self.dir_x + 0.1*scale > 1 or self.x + self.dir_x - 0.1*scale < -1:
 			self.dir_x = 0
 		if self.y + self.dir_y + 0.1 * scale > 1 or self.y + self.dir_y - 0.1*scale < -1:
@@ -138,18 +143,16 @@ class Cell:
 		self.x += self.dir_x
 		self.y += self.dir_y
 
-
-
-	#verifica se duas bolas colidiram entre si
+	#verifica se dois objetos cell colidiram entre si
 	def check_colision(self,b,scale):
 		dist_2 = (self.x - b.x)**2 + (self.y - b.y)**2
 		rads_2 = (0.1*self.tam*scale + 0.1 *b.tam*scale)**2
 		return dist_2 < rads_2
 	
-	#Função que pega a matriz de transformação da bola.
+	#Função que devolve a matriz de transformação do objeto cell.
 	#É feito as operações de: 
-	# 	rotação(a bola girando no próprio eixo)
-	#	translação(o movimento da própria bola)
+	# 	rotação(somente para objeto tipo 'bacteria', para definir a direção do movimento)
+	#	translação(o movimento dos obejtos)
 	#	escala(escala/tamanho dos objetos)
 	def get_transformation(self):
 		c = 1

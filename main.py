@@ -10,14 +10,13 @@ Trabalho 1 - SCC0250-2022
 
 Nosso trabalho tem o cenário aonde nosso objetivo é testar o reflexo do usuário.
 
-O usuário controla uma bola e deve desviar das outras.
-Para ter um efeito legal, ele pode controlar a velocidade de rotação das bolas
-Caso ele ache que o jogo está muito díficil ou fácil, ele pode alterar o tamanho das bolas.
+O usuário controla uma "bactéria" e deve desviar dos "vírus".
+Caso ele ache que o jogo está muito díficil ou fácil, ele pode alterar o tamanho dos objetos na janela.
 
 Comandos:
-	Setas para o controle da bola controlável pelo usuário.
+	Setas esquerda e direita controlam a direção do movimento do objeto controlável.
+	Seta Cima e Baixo controlam a velocidade do movimento do objeto controlável
 	Teclas W e S para alterar a escala dos obejtos do jogo.
-	Teclas A e S para alterar a velocidade de rotação dos objetos.
 '''
 
 
@@ -106,14 +105,14 @@ glUseProgram(program)
 colisions = 0			#Número de colisões entre a bola controlável e a bolas não controláveis
 scale = 1.0				#escala que é aplicada em todos os objetos
 all_points = []			#array que armazena todos os pontos de todos os objetos
-cells = []				#array que armazena todos os objetos(bolas) do programa
+cells = []				#array que armazena todos os objetos(células - bactéria e vírus) do programa
 
-#Criação da Bola controlável pelo jogador
+#Criação da "Célula" (Bactéria) controlável pelo jogador
 b1 = cell.Cell(len(all_points),-0.9,-0.9,1,'bacteria')
 all_points += b1.points
 cells.append(b1)
 
-#Criação das bolas não controláveis pelo jogador, sua posição inicial é escolhida aleatóriamente
+#Criação das "células" inimigas (vírus) não controláveis pelo jogador, sua posição inicial é escolhida aleatóriamente
 for i in range(5):
 	x = random.randint(-10,10) / 10
 	y = random.randint(-10,10) / 10
@@ -122,7 +121,7 @@ for i in range(5):
 	all_points += b.points
 	cells.append(b)
 
-#Preparando o espaço para todos os vértices de todas as bolas
+#Preparando o espaço para todos os vértices de todas os objetos
 vertices = np.zeros(len(all_points), [("position", np.float32, 2)])
 
 #Passando todos os vértices
@@ -185,26 +184,10 @@ def draw(offset,colors, transf):
 		glUniform4f(loc_color, c['r'], c['g'], c['b'], 1.0)
 		glDrawArrays(GL_TRIANGLES, offset + 3*index, 3)
 		index += 1
-def get_global_transformation(ang,scale):
-	c = math.cos(math.radians(ang))
-	s = math.sin(math.radians(ang))
 
-	mat_rotation = np.array([c, -s, 0.0, 0.0,
-			                 s, c, 0.0, 0.0,
-			                 0.0, 0.0, 1.0, 0.0,
-			                 0.0, 0.0, 0.0, 1.0], np.float32)
 
-	mat_scale = np.array([scale, 0.0, 0.0, 0.0,
-			              0.0, scale, 0.0, 0.0,
-			              0.0, 0.0, 1.0, 0.0,
-			              0.0, 0.0, 0.0, 1.0], np.float32)
-
-	mat_transform = cell.multiplica_matriz(mat_rotation, mat_scale)
-
-	return mat_transform
-
-#Transformação que faz a operação de rotação das bolas e de escala
-def get_global_transformation():
+#Transformação que faz a operação de escala para aplicar em todos os objetos
+def get_global_scale():
 	mat_scale = np.array([scale, 0.0, 0.0, 0.0,
 		  0.0, scale, 0.0, 0.0,
 		  0.0, 0.0, 1.0, 0.0,
@@ -223,12 +206,12 @@ while not glfw.window_should_close(window) and colisions < 100:
 	#Fazendo a transformação para cada bola e desenhando ela
 	for b in cells:
 		b.move(scale)
-		gt = get_global_transformation()	
+		gt = get_global_scale()	
 		t = b.get_transformation()
 		t = cell.multiplica_matriz(t,gt)
 		draw(b.offset,b.colors,t)
 
-	#verifica se está havendo colisão entre a bola controlável e as não controláveis
+	#verifica se está havendo colisão entre a bacteria e os virus
 	for b in cells[1:]:
 		if b.check_colision(cells[0],scale):
 			colisions += 1
